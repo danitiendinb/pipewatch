@@ -1,0 +1,35 @@
+# pipewatch configuration example
+# Copy to pipewatch.yml and customize.
+
+log_level: INFO         # DEBUG | INFO | WARNING | ERROR
+state_dir: .pipewatch   # directory where run state is persisted
+
+# Alerting destinations (at least one recommended)
+alert:
+  webhook_url: "https://hooks.example.com/your-token"   # generic HTTP webhook
+  slack_channel: "#data-alerts"                          # requires SLACK_BOT_TOKEN env var
+  email: "oncall@example.com"                            # requires SMTP env vars
+
+# Define each ETL pipeline to monitor
+pipelines:
+  - name: ingest_orders
+    schedule_cron: "0 * * * *"        # expected run frequency (cron syntax)
+    max_duration_seconds: 600         # alert if run exceeds this duration
+    alert_on_failure: true
+    alert_on_timeout: true
+    tags:
+      - orders
+      - critical
+
+  - name: transform_users
+    schedule_cron: "30 6 * * *"
+    max_duration_seconds: 1800
+    alert_on_failure: true
+    alert_on_timeout: false
+    tags:
+      - users
+
+  - name: export_reports
+    max_duration_seconds: 3600
+    alert_on_failure: true
+    alert_on_timeout: true
