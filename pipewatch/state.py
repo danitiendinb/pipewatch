@@ -55,8 +55,13 @@ class StateStore:
         path = self._path(pipeline)
         if not path.exists():
             return PipelineState(pipeline=pipeline)
-        with path.open() as fh:
-            data = json.load(fh)
+        try:
+            with path.open() as fh:
+                data = json.load(fh)
+        except (json.JSONDecodeError, OSError) as exc:
+            raise RuntimeError(
+                f"Failed to load state for pipeline '{pipeline}': {exc}"
+            ) from exc
         last = data.get("last_run")
         return PipelineState(
             pipeline=pipeline,
@@ -73,8 +78,13 @@ class StateStore:
             "consecutive_failures": state.consecutive_failures,
             "history": state.history[-50:],  # keep last 50
         }
-        with path.open("w") as fh:
-            json.dump(data, fh, indent=2)
+        try:
+            with path.open("w") as fh:
+                json.dump(data, fh, indent=2)
+        except OSError as exc:
+            raise RuntimeError(
+                f"Failed to save state for pipeline '{state.pipeline}': {exc}"
+            ) from exc
 
     def record_run(self, run: PipelineRun) -> PipelineState:
         state = self.load(run.pipeline)
