@@ -51,9 +51,14 @@ pipewatch status
 
 ```
 Pipeline           Status     Last Run         Duration
------------------  ---------  ---------------  --------
-daily_sales_etl    ✓ healthy  2 minutes ago    4.2s
+-----------------  ---------aily_sales_etl    ✓ healthy  2 minutes ago    4.2s
 user_sync          ✗ failed   15 minutes ago   --
+```
+
+View recent run history for a specific pipeline:
+
+```bash
+pipewatch history --pipeline daily_sales_etl --limit 10
 ```
 
 ---
