@@ -28,8 +28,17 @@ class HealthReport:
     def healthy(self) -> bool:
         return self.failing == 0
 
+    @property
+    def summary_line(self) -> str:
+        """Return a one-line summary string suitable for logging or notifications."""
+        return (
+            f"{self.total} pipelines — "
+            f"{self.ok} ok, {self.failing} failing, {self.unknown} unknown"
+        )
+
 
 def summarize_pipeline(name: str, store) -> PipelineSummary:
+    """Load state for a single pipeline and return a PipelineSummary."""
     state = store.load(name)
     status = pipeline_status(state)
     last_run = state.runs[-1].finished_at if state.runs else None
@@ -42,6 +51,7 @@ def summarize_pipeline(name: str, store) -> PipelineSummary:
 
 
 def build_health_report(pipeline_names: List[str], store) -> HealthReport:
+    """Build a HealthReport by summarizing all named pipelines."""
     summaries = [summarize_pipeline(n, store) for n in pipeline_names]
     ok = sum(1 for s in summaries if s.status == "ok")
     failing = sum(1 for s in summaries if s.status == "failing")
@@ -56,9 +66,9 @@ def build_health_report(pipeline_names: List[str], store) -> HealthReport:
 
 
 def render_health_report(report: HealthReport) -> str:
+    """Render a HealthReport as a human-readable string."""
     lines = [
-        f"Health Report: {report.total} pipelines — "
-        f"{report.ok} ok, {report.failing} failing, {report.unknown} unknown",
+        f"Health Report: {report.summary_line}",
         "-" * 60,
     ]
     for s in report.pipelines:
