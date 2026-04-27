@@ -1,6 +1,7 @@
 """Integration tests: dashboard with real state store and config."""
 from __future__ import annotations
 
+import re
 import pytest
 
 from pipewatch.config import PipewatchConfig, PipelineConfig
@@ -20,6 +21,11 @@ def config(tmp_path):
         PipelineConfig(name="pipe-fail", schedule="@hourly", failure_threshold=2),
     ]
     return PipewatchConfig(pipelines=pipelines, state_dir=str(tmp_path), log_level="INFO")
+
+
+def _strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from *text* for plain-text assertions."""
+    return re.sub(r"\033\[[0-9;]*m", "", text)
 
 
 def test_dashboard_shows_both_pipelines(store, config):
@@ -44,9 +50,15 @@ def test_dashboard_ok_pipeline_no_overdue_tag(store, config):
     run = start("pipe-ok", store)
     finish(run, store, success=True)
     output = run_dashboard(config, store)
-    # strip ANSI for simpler assertion
-    import re
-    clean = re.sub(r"\033\[[0-9;]*m", "", output)
+    clean = _strip_ansi(output)
     lines = [l for l in clean.splitlines() if "pipe-ok" in l]
     assert lines, "pipe-ok row missing"
     assert "OVERDUE" not in lines[0]
+
+
+def test_dashboard_never_run_pipeline_present(store, config):
+    """A pipeline that has never run should still appear in the dashboard."""
+    output = run_dashboard(config, store)
+    clean = _strip_ansi(output)
+    assert "pipe-ok" in clean
+    assert "pipe-fail" in clean
