@@ -68,6 +68,12 @@ def test_root_nodes_all_roots_when_no_deps():
     assert root_nodes(report) == ["X", "Y"]
 
 
+def test_root_nodes_empty_graph():
+    """root_nodes on an empty graph should return an empty list."""
+    report = GraphReport()
+    assert root_nodes(report) == []
+
+
 def test_critical_path_longest_chain():
     graph = _make_graph()
     path = critical_path(graph, "A")
@@ -84,6 +90,13 @@ def test_critical_path_single_node():
 def test_critical_path_unknown_returns_empty():
     graph = _make_graph()
     assert critical_path(graph, "MISSING") == []
+
+
+def test_critical_path_from_intermediate_node():
+    """critical_path starting from B should return B -> C, not include A."""
+    graph = _make_graph()
+    path = critical_path(graph, "B")
+    assert path == ["B", "C"]
 
 
 def test_reachable_handles_cycle_gracefully():
