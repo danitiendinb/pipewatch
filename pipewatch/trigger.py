@@ -22,11 +22,17 @@ def _trigger_path(state_dir: str, pipeline: str) -> Path:
 
 
 def load_trigger(state_dir: str, pipeline: str) -> Optional[TriggerRecord]:
+    """Load a pending trigger record for a pipeline, or None if not set."""
     path = _trigger_path(state_dir, pipeline)
     if not path.exists():
         return None
-    data = json.loads(path.read_text())
-    return TriggerRecord(**data)
+    try:
+        data = json.loads(path.read_text())
+        return TriggerRecord(**data)
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ValueError(
+            f"Corrupt trigger file for pipeline '{pipeline}': {path}"
+        ) from exc
 
 
 def set_trigger(
@@ -36,6 +42,7 @@ def set_trigger(
     triggered_by: str = "user",
     timestamp: Optional[str] = None,
 ) -> TriggerRecord:
+    """Create or overwrite a trigger record for the given pipeline."""
     from pipewatch.state import now_iso
     record = TriggerRecord(
         pipeline=pipeline,
@@ -49,10 +56,12 @@ def set_trigger(
 
 
 def clear_trigger(state_dir: str, pipeline: str) -> None:
+    """Remove the pending trigger record for a pipeline, if present."""
     path = _trigger_path(state_dir, pipeline)
     if path.exists():
         path.unlink()
 
 
 def pending_triggers(state_dir: str, pipelines: list[str]) -> list[TriggerRecord]:
+    """Return all pending trigger records for the given list of pipelines."""
     return [r for p in pipelines if (r := load_trigger(state_dir, p)) is not None]
