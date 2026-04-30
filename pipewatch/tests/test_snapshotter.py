@@ -57,6 +57,13 @@ def test_snapshot_pipeline_names_present(state_dir):
     assert "alpha" in names
 
 
+def test_snapshot_timestamps_are_ordered(state_dir):
+    """Snapshots appended over time should have non-decreasing timestamps."""
+    snap1 = take_snapshot(state_dir, [])
+    snap2 = take_snapshot(state_dir, [])
+    assert snap2["ts"] >= snap1["ts"]
+
+
 def test_clear_snapshots_removes_file(state_dir):
     take_snapshot(state_dir, [])
     clear_snapshots(state_dir)
